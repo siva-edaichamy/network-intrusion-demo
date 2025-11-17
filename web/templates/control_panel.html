@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tanzu Demo - Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: #4a9eff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+
+        .step-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(74, 158, 255, 0.3);
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #4a9eff;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .step-title {
+            color: #4a9eff;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+
+        .btn-train {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-train:hover {
+            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        .result-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .result-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+
+        .result-item.success {
+            background: rgba(39, 174, 96, 0.1);
+            border-left-color: #27ae60;
+        }
+
+        .result-item.error {
+            background: rgba(231, 76, 60, 0.1);
+            border-left-color: #e74c3c;
+        }
+
+        .result-item.warning {
+            background: rgba(255, 165, 0, 0.1);
+            border-left-color: #ffa500;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #4a9eff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .link-button {
+            display: inline-block;
+            margin-top: 20px;
+            color: #4a9eff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid #4a9eff;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .link-button:hover {
+            background: #4a9eff;
+            color: white;
+        }
+
+        /* Train Model Progress Styles */
+        .train-progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .train-progress-container.active {
+            display: block;
+        }
+
+        .progress-bar-wrapper {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #f093fb 0%, #f5576c 50%, #f093fb 100%);
+            background-size: 200% 100%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            position: relative;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .train-steps {
+            margin-top: 15px;
+        }
+
+        .train-step {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .train-step.pending {
+            opacity: 0.5;
+            border-left-color: #555;
+        }
+
+        .train-step.active {
+            background: rgba(240, 147, 251, 0.1);
+            border-left-color: #f093fb;
+        }
+
+        .train-step.complete {
+            background: rgba(39, 174, 96, 0.1);
+            border-left-color: #27ae60;
+        }
+
+        .train-step.error {
+            background: rgba(231, 76, 60, 0.1);
+            border-left-color: #e74c3c;
+        }
+
+        .step-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+
+        .train-step.pending .step-icon {
+            background: #555;
+            color: #888;
+        }
+
+        .train-step.active .step-icon {
+            background: #f093fb;
+            color: white;
+        }
+
+        .train-step.complete .step-icon {
+            background: #27ae60;
+            color: white;
+        }
+
+        .train-step.error .step-icon {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .step-message {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        .train-results {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(39, 174, 96, 0.1);
+            border: 1px solid #27ae60;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .train-results.active {
+            display: block;
+        }
+
+        .train-results h3 {
+            color: #27ae60;
+            margin-bottom: 10px;
+        }
+
+        .train-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4a9eff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Network Intrusion Detection Demo</h1>
+            <p class="subtitle">Control Panel - Setup & Management</p>
+        </header>
+
+        <!-- Step 1: Pre-flight Checks -->
+        <div class="step-card">
+            <h2 class="step-title">
+                <span class="step-number">1</span>
+                Pre-flight Checks
+            </h2>
+            <p>Verify connectivity to all required services before proceeding.</p>
+            <button class="btn" onclick="runPreflightChecks()">🔍 Run Checks</button>
+            <div id="preflight-results" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Step 2: Setup -->
+        <div class="step-card">
+            <h2 class="step-title">
+                <span class="step-number">2</span>
+                Setup
+            </h2>
+            <p>Initialize Greenplum table, upload model to GemFire, and configure GPSS.</p>
+            <button class="btn" onclick="runSetup()" id="setup-btn">⚙️ Run Setup</button>
+            <div id="setup-results" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Step 3: Train & Load Best Model -->
+        <div class="step-card">
+            <h2 class="step-title">
+                <span class="step-number">3</span>
+                Train & Load Best Model
+            </h2>
+            <p>Train multiple ML models, compare their performance, and automatically upload the best model to GemFire.</p>
+            <button class="btn btn-train" onclick="trainAndLoadModel()" id="train-load-btn">🧠 Train & Load Best Model</button>
+
+            <div id="train-load-progress" class="train-progress-container" style="display: none;">
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar" id="train-load-progress-bar" style="width: 0%"></div>
+                    <div class="progress-text" id="train-load-progress-text">0%</div>
+                </div>
+                <div id="train-load-status" style="margin-top: 15px; color: #888;"></div>
+            </div>
+
+            <div id="train-load-results" style="margin-top: 20px; display: none;">
+                <div id="model-comparison-results"></div>
+            </div>
+
+            <div id="train-load-error" style="margin-top: 20px; display: none; color: #e74c3c;"></div>
+        </div>
+
+        <!-- Step 4: Demo Control -->
+        <div class="step-card">
+            <h2 class="step-title">
+                <span class="step-number">4</span>
+                Demo Control
+            </h2>
+            <p>Start the demo to begin simulating devices and streaming data.</p>
+            <button class="btn btn-success" onclick="startDemo()" id="start-btn">▶️ Start Demo</button>
+            <button class="btn btn-danger" onclick="stopDemo()" id="stop-btn" disabled>⏹️ Stop Demo</button>
+            <button class="btn" onclick="resetDemo()">🔄 Reset Demo</button>
+            <div id="demo-status" style="margin-top: 20px;"></div>
+
+            <a href="/demo" class="link-button" target="_blank">📊 Open Demo Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        // API helper function
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method
+                };
+
+                if (body !== null) {
+                    options.headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(endpoint, options);
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('API call error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Train & Load Best Model Function
+        async function trainAndLoadModel() {
+            const trainBtn = document.getElementById('train-load-btn');
+            const progressContainer = document.getElementById('train-load-progress');
+            const resultsContainer = document.getElementById('train-load-results');
+            const errorContainer = document.getElementById('train-load-error');
+            const progressBar = document.getElementById('train-load-progress-bar');
+            const progressText = document.getElementById('train-load-progress-text');
+            const statusDiv = document.getElementById('train-load-status');
+
+            // Disable button and show progress
+            trainBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            errorContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+            statusDiv.textContent = 'Starting model training...';
+
+            const startTime = Date.now();
+
+            try {
+                // Update progress
+                progressBar.style.width = '10%';
+                progressText.textContent = '10%';
+                statusDiv.textContent = 'Loading dataset and preparing training...';
+
+                // Call the training API with timeout handling
+                statusDiv.textContent = 'Calling training API... (this may take 5-10 minutes)';
+                
+                // Set a long timeout and show periodic updates
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => {
+                        reject(new Error('Training request timed out after 15 minutes. Check server logs for details.'));
+                    }, 15 * 60 * 1000); // 15 minute timeout
+                });
+                
+                const trainingPromise = apiCall('/api/model/train', 'POST', {});
+                
+                // Show periodic status updates while waiting
+                const statusInterval = setInterval(() => {
+                    const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
+                    statusDiv.textContent = `Training in progress... (${elapsed}s elapsed) - Check server console for detailed logs`;
+                }, 5000); // Update every 5 seconds
+                
+                let trainResult;
+                try {
+                    trainResult = await Promise.race([trainingPromise, timeoutPromise]);
+                    clearInterval(statusInterval);
+                } catch (error) {
+                    clearInterval(statusInterval);
+                    throw error;
+                }
+
+                if (!trainResult.success) {
+                    const errorDetails = trainResult.error || trainResult.message || 'Training failed';
+                    throw new Error(errorDetails);
+                }
+
+                // Update progress
+                progressBar.style.width = '80%';
+                progressText.textContent = '80%';
+                statusDiv.textContent = 'Training complete! Uploading best model to GemFire...';
+
+                // Small delay to show upload step
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Load comparison results
+                const comparisonResult = await apiCall('/api/model/comparison', 'GET');
+
+                // Update progress
+                progressBar.style.width = '100%';
+                progressText.textContent = '100%';
+                statusDiv.textContent = '✓ Complete! Best model uploaded to GemFire.';
+
+                // Calculate training time
+                const trainingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+
+                // Display results
+                let resultsHtml = '<div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px;">';
+                
+                if (comparisonResult.success && comparisonResult.comparison) {
+                    const comp = comparisonResult.comparison;
+                    
+                    resultsHtml += '<h3 style="color: #4a9eff; margin-bottom: 15px;">✓ Training Complete!</h3>';
+                    resultsHtml += `<p style="color: #888; margin-bottom: 20px;">Training time: ${trainingTime}s</p>`;
+                    
+                    // Display all models tested
+                    resultsHtml += '<h4 style="color: #4a9eff; margin-bottom: 10px;">Models Tested:</h4>';
+                    resultsHtml += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">';
+                    resultsHtml += '<thead><tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">';
+                    resultsHtml += '<th style="text-align: left; padding: 8px;">Model</th>';
+                    resultsHtml += '<th style="text-align: right; padding: 8px;">Accuracy</th>';
+                    resultsHtml += '</tr></thead><tbody>';
+                    
+                    comp.models.forEach(model => {
+                        const isBest = model.name === comp.best_model;
+                        const rowStyle = isBest ? 'background: rgba(74, 158, 255, 0.2); font-weight: bold;' : '';
+                        resultsHtml += `<tr style="${rowStyle}">`;
+                        resultsHtml += `<td style="padding: 8px;">${model.name}${isBest ? ' ⭐ (Selected)' : ''}</td>`;
+                        resultsHtml += `<td style="text-align: right; padding: 8px;">${model.accuracy_percent.toFixed(2)}%</td>`;
+                        resultsHtml += `</tr>`;
+                    });
+                    
+                    resultsHtml += '</tbody></table>';
+                    
+                    // Display best model summary
+                    resultsHtml += '<div style="background: rgba(74, 158, 255, 0.1); padding: 15px; border-radius: 6px; border-left: 3px solid #4a9eff; margin-top: 15px;">';
+                    resultsHtml += `<strong style="color: #4a9eff;">Best Model Selected & Uploaded:</strong><br>`;
+                    resultsHtml += `<div style="margin-top: 8px;">${comp.best_model} with ${comp.best_accuracy_percent.toFixed(2)}% accuracy</div>`;
+                    resultsHtml += '<div style="margin-top: 8px; color: #27ae60;">✓ Model successfully uploaded to GemFire</div>';
+                    resultsHtml += '</div>';
+                } else {
+                    resultsHtml += '<h3 style="color: #4a9eff;">✓ Training Complete!</h3>';
+                    resultsHtml += `<p style="color: #888;">Training time: ${trainingTime}s</p>`;
+                    if (trainResult.best_model) {
+                        resultsHtml += `<p style="color: #27ae60; margin-top: 10px;">✓ Best model: ${trainResult.best_model} (${trainResult.best_accuracy?.toFixed(2) || 'N/A'}% accuracy) uploaded to GemFire</p>`;
+                    }
+                }
+                
+                resultsHtml += '</div>';
+                document.getElementById('model-comparison-results').innerHTML = resultsHtml;
+                resultsContainer.style.display = 'block';
+
+            } catch (error) {
+                console.error('Training error:', error);
+                let errorMsg = `✗ Error: ${error.message}`;
+                
+                // Show more detailed error if available
+                if (error.response) {
+                    try {
+                        const errorData = await error.response.json();
+                        if (errorData.error) {
+                            errorMsg += `\n\nDetails: ${errorData.error.substring(0, 500)}`;
+                        }
+                    } catch (e) {
+                        // Ignore JSON parse errors
+                    }
+                }
+                
+                errorContainer.innerHTML = `<pre style="white-space: pre-wrap; font-size: 12px; color: #e74c3c;">${errorMsg}</pre>`;
+                errorContainer.style.display = 'block';
+                statusDiv.textContent = '✗ Training failed - see error details below';
+            } finally {
+                trainBtn.disabled = false;
+            }
+        }
+
+        // Pre-flight checks
+        async function runPreflightChecks() {
+            const resultsDiv = document.getElementById('preflight-results');
+            resultsDiv.innerHTML = '<div class="loading"></div> Running checks...';
+
+            const result = await apiCall('/api/preflight/run', 'POST');
+
+            if (result.success && result.summary) {
+                const checks = result.summary.results;
+                let html = '<ul class="result-list">';
+
+                for (const check of checks) {
+                    const statusClass = check.success ? 'success' : 'error';
+                    const icon = check.success ? '✓' : '✗';
+
+                    html += `
+                        <li class="result-item ${statusClass}">
+                            <strong>${icon} ${check.name}</strong><br>
+                            ${check.message}
+                        </li>
+                    `;
+                }
+
+                html += '</ul>';
+                html += `<p style="margin-top: 15px;">Summary: ${result.summary.passed}/${result.summary.total} checks passed</p>`;
+
+                resultsDiv.innerHTML = html;
+            } else {
+                resultsDiv.innerHTML = `<p style="color: #e74c3c;">Error: ${result.error || 'Unknown error'}</p>`;
+            }
+        }
+
+        // Setup
+        async function runSetup() {
+            const resultsDiv = document.getElementById('setup-results');
+            const setupBtn = document.getElementById('setup-btn');
+
+            setupBtn.disabled = true;
+            resultsDiv.innerHTML = '<div class="loading"></div> Running setup...';
+
+            const result = await apiCall('/api/setup/run', 'POST', {});
+
+            if (result.success) {
+                const steps = result.results;
+
+                // Define the order to match run_all_setup() execution order
+                const orderedKeys = [
+                    'rabbitmq_infrastructure',
+                    'gemfire_prediction_cache',
+                    'greenplum_table',
+                    'gpss_yaml',
+                    'gpss_job',
+                    'gpss_job_start'
+                ];
+
+                let html = '<ul class="result-list">';
+
+                // Iterate through keys in the defined order
+                for (const key of orderedKeys) {
+                    if (steps[key]) {
+                        const step = steps[key];
+
+                        let statusClass, icon;
+                        if (step.status === 'warning') {
+                            statusClass = 'warning';
+                            icon = '⚠';
+                        } else if (step.success) {
+                            statusClass = 'success';
+                            icon = '✓';
+                        } else {
+                            statusClass = 'error';
+                            icon = '✗';
+                        }
+
+                        html += `
+                            <li class="result-item ${statusClass}">
+                                <strong>${icon} ${step.name || key}</strong><br>
+                                ${step.message}
+                            </li>
+                        `;
+                    }
+                }
+
+                html += '</ul>';
+                resultsDiv.innerHTML = html;
+            } else {
+                resultsDiv.innerHTML = `<p style="color: #e74c3c;">Error: ${result.error}</p>`;
+            }
+
+            setupBtn.disabled = false;
+        }
+
+        // Start demo
+        async function startDemo() {
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const statusDiv = document.getElementById('demo-status');
+
+            startBtn.disabled = true;
+            statusDiv.innerHTML = '<div class="loading"></div> Starting demo...';
+
+            const result = await apiCall('/api/demo/start', 'POST', {
+                num_devices: 5,
+                duration: null
+            });
+
+            if (result.success) {
+                statusDiv.innerHTML = `<p style="color: #27ae60;">✓ ${result.message}</p>`;
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                startStatusPolling();
+            } else {
+                statusDiv.innerHTML = `<p style="color: #e74c3c;">✗ ${result.error}</p>`;
+                startBtn.disabled = false;
+            }
+        }
+
+        // Stop demo
+        async function stopDemo() {
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const statusDiv = document.getElementById('demo-status');
+
+            stopBtn.disabled = true;
+            statusDiv.innerHTML = '<div class="loading"></div> Stopping demo...';
+
+            const result = await apiCall('/api/demo/stop', 'POST');
+
+            if (result.success) {
+                statusDiv.innerHTML = `<p style="color: #27ae60;">✓ ${result.message}</p>`;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+
+                stopStatusPolling();
+            } else {
+                statusDiv.innerHTML = `<p style="color: #e74c3c;">✗ ${result.error}</p>`;
+                stopBtn.disabled = false;
+            }
+        }
+
+        // Reset demo
+        async function resetDemo() {
+            if (!confirm('Are you sure you want to reset the demo? This will stop any running processes.')) {
+                return;
+            }
+
+            // Disable all buttons during reset
+            const allButtons = document.querySelectorAll('.btn');
+            const originalStates = {};
+            allButtons.forEach(btn => {
+                originalStates[btn.id] = btn.disabled;
+                btn.disabled = true;
+            });
+
+            try {
+            const hardReset = confirm('Clear all data from Greenplum? (Hard reset)');
+
+            const result = await apiCall('/api/demo/reset', 'POST', {
+                    clear_data: true
+                });
+
+                if (result.success) {
+                    // Enable all buttons except Stop Demo and Reset
+                    const startBtn = document.getElementById('start-btn');
+                    const stopBtn = document.getElementById('stop-btn');
+                    const resetBtn = document.querySelector('button[onclick="resetDemo()"]');
+                    
+                    // Enable Start Demo button
+                    if (startBtn) {
+                        startBtn.disabled = false;
+                    }
+                    
+                    // Keep Stop Demo disabled
+                    if (stopBtn) {
+                        stopBtn.disabled = true;
+                    }
+                    
+                    // Keep Reset button disabled (already disabled during reset)
+                    if (resetBtn) {
+                        resetBtn.disabled = true;
+                    }
+                    
+                    // Enable all other buttons (preflight, train, setup, etc.)
+                    const allButtons = document.querySelectorAll('.btn');
+                    allButtons.forEach(btn => {
+                        // Skip stop and reset buttons
+                        if (btn !== stopBtn && btn !== resetBtn && btn.id !== 'stop-btn') {
+                            btn.disabled = false;
+                        }
+                    });
+                    
+                    // Reset demo status
+                document.getElementById('demo-status').innerHTML = '';
+                stopStatusPolling();
+                    
+                    // Show message with setup reminder (only in alert, not duplicated)
+                    let message = result.message;
+                    if (result.requires_setup) {
+                        message += '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                        message += '⚠️  IMPORTANT: Please rerun Setup step to refresh connections.\n';
+                        message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+                    }
+                    
+                    alert(message);
+                } else {
+                    console.error('Reset failed:', result.message);
+                    alert('Reset failed: ' + result.message);
+                    // Restore original button states on failure
+                    allButtons.forEach(btn => {
+                        if (originalStates.hasOwnProperty(btn.id)) {
+                            btn.disabled = originalStates[btn.id];
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Reset error:', error);
+                alert('Reset error: ' + error.message);
+                // Restore original button states on error
+                allButtons.forEach(btn => {
+                    if (originalStates.hasOwnProperty(btn.id)) {
+                        btn.disabled = originalStates[btn.id];
+                    }
+                });
+            }
+        }
+
+        // Status polling
+        let statusInterval = null;
+
+        function startStatusPolling() {
+            if (statusInterval) return;
+
+            statusInterval = setInterval(async () => {
+                const result = await apiCall('/api/demo/status', 'GET');
+
+                if (result.success && result.status.running) {
+                    const status = result.status;
+                    document.getElementById('demo-status').innerHTML = `
+                        <p style="color: #27ae60;">
+                            ✓ Demo Running<br>
+                            Devices: ${status.devices}<br>
+                            Messages Sent: ${status.messages_sent || 0}<br>
+                            Predictions Made: ${status.predictions_made || 0}
+                        </p>
+                    `;
+                }
+            }, 2000);
+        }
+
+        function stopStatusPolling() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+            }
+        }
+
+        // Auto-load status on page load
+        window.addEventListener('load', async () => {
+            const result = await apiCall('/api/demo/status', 'GET');
+            if (result.success && result.status && result.status.running) {
+                document.getElementById('start-btn').disabled = true;
+                document.getElementById('stop-btn').disabled = false;
+                startStatusPolling();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+# Environment and Credentials
+.env
+*.pem
+*.key
+
+# Generated GPSS Configuration (contains credentials)
+config/load_kdd.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+venv_new/
+demo_env/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/*.log
+logs/*.txt
+*.log
+
+# Data
+data/*.csv
+data/*.txt
+data/*.json
+!data/.gitkeep
+
+# Models
+models/*.pkl
+models/*.joblib
+models/*.h5
+!models/.gitkeep
+
+# GPSS
+gpss/*.log
+gpss/*.pid
+gpss/*.lock
+gpss/gpss_data/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Backup files
+*.bak
+*.backup
+*~

@@ -1,0 +1,12 @@
+{
+  "models": [
+    {
+      "name": "Random Forest",
+      "accuracy": 0.9990727385122604,
+      "accuracy_percent": 99.90727385122604
+    }
+  ],
+  "best_model": "Random Forest",
+  "best_accuracy": 0.9990727385122604,
+  "best_accuracy_percent": 99.90727385122604
+}

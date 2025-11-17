@@ -1,0 +1,10 @@
+{
+  "ListenAddress": {
+    "Host": "127.0.0.1",
+    "Port": 5000
+  },
+  "Gpfdist": {
+    "Host": "",
+    "Port": 8080
+  }
+}

@@ -1,0 +1,4 @@
+# This file ensures the data/ directory is tracked by git
+# Place your KDD Cup dataset CSV files here:
+#   - kdd_cup_data_history.csv (for training)
+#   - kdd_cup_data_stream.csv (for simulation)

@@ -1,0 +1,109 @@
+# Tanzu Data Intelligence Demo - Complete Configuration
+# File: config/config.yaml
+
+application:
+  name: "Tanzu Data Intelligence - Intrusion Detection"
+  version: "1.0.0"
+  description: "Real-time network intrusion detection demo with Gemfire caching"
+
+# Simulation Configuration (UPDATED for new dashboard)
+simulation:
+  # Total messages per second across all devices
+  messages_per_second: 10.0
+
+  # Loop through dataset continuously
+  loop_dataset: true
+
+  # Device-specific message rates (messages per second per device)
+  # Total should equal messages_per_second above
+  # Comment out this section to distribute evenly (2 msg/sec each)
+  device_rates:
+    celltower: 3.0    # Cell Tower - high volume network traffic
+    mobile: 4       # Mobile Phone - moderate traffic
+    laptop: 2.0       # Laptop - moderate traffic
+    iot: 1.5          # IoT Device - lower traffic
+    c2: 1.0           # C2 Center - suspicious/low volume traffic
+
+  # Fixed device names (DO NOT CHANGE - matches dashboard)
+  device_names:
+    - "Cell Tower"
+    - "Mobile Phone"
+    - "Laptop"
+    - "IoT Device"
+    - "C2 Center"
+
+  # Number of devices (DO NOT CHANGE - dashboard expects 5)
+  num_devices: 5
+
+# Model Configuration
+model:
+  name: "kdd_intrusion_detection"
+  version: "v1"
+
+  # Path to sample trained model (optional)
+  sample_model_path: "./models/sample_kdd_model.pkl"
+
+  # Cache model in memory after loading from Gemfire
+  cache_in_memory: true
+
+  # Inference timeout in milliseconds
+  inference_timeout_ms: 100
+
+# Visualization Configuration
+visualization:
+  theme: "dark"
+  update_interval_ms: 2000  # Dashboard polls every 2 seconds
+  animation_speed: "normal"  # slow, normal, fast
+  show_predictions: true
+  show_metrics: true
+  fullscreen_by_default: false
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  max_file_size_mb: 10
+  backup_count: 5
+  console_output: true
+
+# Performance Configuration
+performance:
+  max_queue_size: 1000
+  consumer_threads: 1  # Single consumer thread is sufficient
+  batch_size: 1  # Process messages one at a time for real-time feel
+  connection_pool_size: 5
+
+# Preflight Check Configuration
+preflight:
+  timeout_seconds: 5
+  retry_attempts: 3
+  warn_on_queue_messages: true
+  queue_message_threshold: 100
+
+# Setup Configuration
+setup:
+  create_backup_before_reset: true
+  auto_start_gpss: true
+  verify_after_setup: true
+
+  # Gemfire region creation
+  create_gemfire_regions: true
+  gemfire_region_type: "REPLICATE"  # or "PARTITION"
+
+# Web Server Configuration
+web:
+  port: 8080
+  host: "0.0.0.0"
+  websocket_port: 8765
+  enable_cors: true
+
+# Demo Control
+demo:
+  # Auto-stop after duration (0 = run indefinitely)
+  auto_stop_after_minutes: 0
+
+  # Auto-stop after message count (0 = no limit)
+  auto_stop_after_messages: 0
+
+  # Pause between messages (for slower demos)
+  artificial_delay_ms: 0

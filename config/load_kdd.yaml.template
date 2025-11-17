@@ -1,0 +1,113 @@
+DATABASE: {{GREENPLUM_DATABASE}}
+USER: {{GREENPLUM_USER}}
+PASSWORD: {{GREENPLUM_PASSWORD}}
+HOST: {{GREENPLUM_HOST}}
+PORT: {{GREENPLUM_PORT}}
+VERSION: 2
+
+RABBITMQ:
+  INPUT:
+    SOURCE:
+      SERVER: {{RABBITMQ_USERNAME}}:{{RABBITMQ_PASSWORD}}@{{RABBITMQ_HOST}}:{{RABBITMQ_PORT}}
+      QUEUE: gpss_queue
+      VIRTUALHOST: {{RABBITMQ_VHOST}}
+    DATA:
+      COLUMNS:
+        - NAME: message_id
+          TYPE: numeric
+        - NAME: duration
+          TYPE: double precision
+        - NAME: protocol_type
+          TYPE: text
+        - NAME: service
+          TYPE: text
+        - NAME: flag
+          TYPE: text
+        - NAME: src_bytes
+          TYPE: double precision
+        - NAME: dst_bytes
+          TYPE: double precision
+        - NAME: land
+          TYPE: double precision
+        - NAME: wrong_fragment
+          TYPE: double precision
+        - NAME: urgent
+          TYPE: double precision
+        - NAME: hot
+          TYPE: double precision
+        - NAME: num_failed_logins
+          TYPE: double precision
+        - NAME: logged_in
+          TYPE: double precision
+        - NAME: num_compromised
+          TYPE: double precision
+        - NAME: root_shell
+          TYPE: double precision
+        - NAME: su_attempted
+          TYPE: double precision
+        - NAME: num_root
+          TYPE: double precision
+        - NAME: num_file_creations
+          TYPE: double precision
+        - NAME: num_shells
+          TYPE: double precision
+        - NAME: num_access_files
+          TYPE: double precision
+        - NAME: num_outbound_cmds
+          TYPE: double precision
+        - NAME: is_host_login
+          TYPE: double precision
+        - NAME: is_guest_login
+          TYPE: double precision
+        - NAME: count
+          TYPE: double precision
+        - NAME: srv_count
+          TYPE: double precision
+        - NAME: serror_rate
+          TYPE: double precision
+        - NAME: srv_serror_rate
+          TYPE: double precision
+        - NAME: rerror_rate
+          TYPE: double precision
+        - NAME: srv_rerror_rate
+          TYPE: double precision
+        - NAME: same_srv_rate
+          TYPE: double precision
+        - NAME: diff_srv_rate
+          TYPE: double precision
+        - NAME: srv_diff_host_rate
+          TYPE: double precision
+        - NAME: dst_host_count
+          TYPE: double precision
+        - NAME: dst_host_srv_count
+          TYPE: double precision
+        - NAME: dst_host_same_srv_rate
+          TYPE: double precision
+        - NAME: dst_host_diff_srv_rate
+          TYPE: double precision
+        - NAME: dst_host_same_src_port_rate
+          TYPE: double precision
+        - NAME: dst_host_srv_diff_host_rate
+          TYPE: double precision
+        - NAME: dst_host_serror_rate
+          TYPE: double precision
+        - NAME: dst_host_srv_serror_rate
+          TYPE: double precision
+        - NAME: dst_host_rerror_rate
+          TYPE: double precision
+        - NAME: dst_host_srv_rerror_rate
+          TYPE: double precision
+        - NAME: intrusion_type
+          TYPE: text
+      FORMAT: CSV
+  OUTPUT:
+    SCHEMA: "{{GREENPLUM_SCHEMA}}"
+    TABLE: {{GREENPLUM_TABLE}}
+    MODE: INSERT
+  METADATA:
+    SCHEMA: {{GREENPLUM_SCHEMA}}
+  COMMIT:
+    MINIMAL_INTERVAL: 200
+    CONSISTENCY: at-least
+  PROPERTIES:
+    eof.when.idle: 1500

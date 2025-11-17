@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Intrusion Detection - Data Flow Dashboard</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #4a9eff;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
+        }
+
+        .header .subtitle {
+            color: #888;
+            font-size: 0.95em;
+        }
+
+        .flow-area {
+              flex: 1;
+              display: flex;
+              gap: 200px;           /* more breathing space */
+              padding: 40px 100px;
+              position: relative;
+              background: rgba(255, 255, 255, 0.02);
+              border-radius: 12px;
+              border: 1px solid rgba(74, 158, 255, 0.2);
+              align-items: stretch; /* allow columns to move independently */
+        }
+
+        .devices-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 200px;
+            flex: 1;
+            justify-content: space-evenly;
+        }
+
+        .middle-column {
+            display: flex;
+            align-items: center;
+            min-width: 220px;
+            flex: 1.2;
+            justify-content: center;
+        }
+
+        .gemfire-column {
+           display: flex;
+           flex-direction: column;
+           min-width: 220px;
+           flex: 1.2;
+           justify-content: flex-start;
+           padding: 15px 0;
+         }
+
+        .targets-column {
+           display: flex;
+           flex-direction: column;
+           min-width: 220px;
+           flex: 1.2;
+           justify-content: flex-end;
+           padding: 1px 0;
+         }
+
+         .gemfire {
+           border-color: #9c27b0;
+           min-height: 200px;
+           min-width: 200px;
+           align-self: flex-end; /* keeps GemFire lower inside column */
+           margin-top: -20px; /* raises it upward inside its column */
+         }
+
+         .greenplum {
+           border-color: #00c853;
+           min-width: 200px;
+           align-self: flex-start; /* keeps Greenplum higher */
+           margin-bottom: 200px;
+         }
+
+        .component {
+            background: rgba(26, 26, 46, 0.8);
+            border: 2px solid;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .component:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .device {
+            border-color: #4a9eff;
+            min-height: 110px;
+        }
+
+        .device.active {
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(74, 158, 255, 0.6);
+        }
+
+        .device-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .device-name {
+            font-weight: 600;
+            color: #4a9eff;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .device-counter {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-top: 5px;
+        }
+
+        .counter-label {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .rabbitmq {
+            border-color: #ff6b35;
+            min-height: 180px;
+            min-width: 200px;
+        }
+
+        .rabbitmq.active {
+            border-color: #ff8c5a;
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.6);
+        }
+
+        .rabbitmq-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .rabbitmq-name {
+            font-weight: 600;
+            color: #ff6b35;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .rabbitmq-counter {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #ff8c5a;
+            margin-top: 8px;
+        }
+
+        .gemfire {
+            border-color: #9c27b0;
+            min-height: 200px;
+            min-width: 220px;
+        }
+
+        .gemfire.active {
+            border-color: #ba68c8;
+            box-shadow: 0 0 20px rgba(156, 39, 176, 0.6);
+        }
+
+        .gemfire-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .gemfire-name {
+            font-weight: 600;
+            color: #9c27b0;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .gemfire-counter {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #ba68c8;
+            margin-top: 6px;
+        }
+
+        .gemfire-metric {
+            font-size: 0.85em;
+            color: #ba68c8;
+            margin-top: 4px;
+        }
+
+        .gemfire-hitrate {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #ce93d8;
+            margin-top: 8px;
+        }
+
+        .greenplum {
+            border-color: #00c853;
+            min-width: 200px;
+        }
+
+        .greenplum.active {
+            border-color: #00e676;
+            box-shadow: 0 0 20px rgba(0, 200, 83, 0.6);
+        }
+
+        .greenplum-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .greenplum-name {
+            font-weight: 600;
+            color: #00c853;
+            margin-bottom: 10px;
+        }
+
+        .greenplum-counter {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #00e676;
+            margin-top: 8px;
+        }
+
+        #connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .flow-line {
+            stroke-width: 2;
+            fill: none;
+            opacity: 0.6;
+        }
+
+        .flow-line.device-to-rabbit {
+            stroke: #4a9eff;
+        }
+
+        .flow-line.rabbit-to-gemfire {
+            stroke: #9c27b0;
+        }
+
+        .flow-line.rabbit-to-greenplum {
+            stroke: #00c853;
+        }
+
+        .flow-line.gemfire-to-greenplum {
+            stroke: #6b7280;
+            stroke-dasharray: 8, 8;
+        }
+
+        /* Training Process Box Styles */
+        .training-process {
+            border-color: #ff9800;
+            min-width: 200px;
+            min-height: 120px;
+        }
+        
+        .training-process-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .training-process-name {
+            font-weight: 600;
+            color: #ff9800;
+            margin-bottom: 10px;
+        }
+
+        .particle {
+            r: 4;
+            opacity: 0.9;
+        }
+
+        .particle.device-particle {
+            fill: #00d4ff;
+        }
+
+        .particle.gemfire-particle {
+            fill: #ba68c8;
+        }
+
+        .particle.greenplum-particle {
+            fill: #00e676;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.running {
+            background: rgba(0, 200, 83, 0.2);
+            color: #00e676;
+            border: 1px solid #00c853;
+        }
+
+        .status-badge.idle {
+            background: rgba(136, 136, 136, 0.2);
+            color: #888;
+            border: 1px solid #666;
+        }
+
+        .status-badge.model-loaded {
+            background: rgba(156, 39, 176, 0.2);
+            color: #ba68c8;
+            border: 1px solid #9c27b0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+        }
+
+        .btn-start {
+            background: #00c853;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #00e676;
+            transform: translateY(-2px);
+        }
+
+        .btn-stop {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #ffb74d;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(74, 158, 255, 0.6); }
+            50% { box-shadow: 0 0 30px rgba(74, 158, 255, 0.9); }
+        }
+
+        .component.pulsing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Reset Progress Modal */
+        .reset-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .reset-modal.active {
+            display: flex;
+        }
+
+        .reset-modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid rgba(74, 158, 255, 0.5);
+            border-radius: 16px;
+            padding: 30px;
+            min-width: 400px;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .reset-modal-title {
+            font-size: 1.5em;
+            color: #4a9eff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .reset-progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .reset-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4a9eff, #00e676);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .reset-status-message {
+            color: #e0e0e0;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reset-status-message .status-icon {
+            font-size: 1.2em;
+        }
+
+        .reset-status-message.completed .status-icon {
+            color: #00e676;
+        }
+
+        .reset-status-message.processing .status-icon {
+            color: #4a9eff;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Reset Progress Status Bar Styles */
+        .reset-progress-container {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .reset-progress-container.active {
+            display: block;
+        }
+
+        .reset-progress-bar-wrapper {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .reset-progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4a9eff 0%, #00e676 50%, #4a9eff 100%);
+            background-size: 200% 100%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            position: relative;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .reset-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            z-index: 1;
+        }
+
+        .reset-status-text {
+            margin-top: 10px;
+            color: #888;
+            font-size: 0.9em;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🛡️ Network Intrusion Detection</h1>
+            <div class="subtitle">Real-time Data Pipeline With In Memory ML | Tanzu Data Intelligence</div>
+        </div>
+
+        <div class="flow-area" id="flowArea">
+            <svg id="connections-svg"></svg>
+
+            <div class="devices-column">
+                <div class="component device" id="device-celltower" data-device="celltower">
+                    <div class="device-icon">📡</div>
+                    <div class="device-name">Cell Tower</div>
+                    <div class="device-counter" data-counter="celltower">0</div>
+                    <div class="counter-label">messages sent</div>
+                </div>
+
+                <div class="component device" id="device-mobile" data-device="mobile">
+                    <div class="device-icon">📱</div>
+                    <div class="device-name">Mobile Phone</div>
+                    <div class="device-counter" data-counter="mobile">0</div>
+                    <div class="counter-label">messages sent</div>
+                </div>
+
+                <div class="component device" id="device-laptop" data-device="laptop">
+                    <div class="device-icon">💻</div>
+                    <div class="device-name">Laptop</div>
+                    <div class="device-counter" data-counter="laptop">0</div>
+                    <div class="counter-label">messages sent</div>
+                </div>
+
+                <div class="component device" id="device-iot" data-device="iot">
+                    <div class="device-icon">🏠</div>
+                    <div class="device-name">IoT Device</div>
+                    <div class="device-counter" data-counter="iot">0</div>
+                    <div class="counter-label">messages sent</div>
+                </div>
+
+                <div class="component device" id="device-c2" data-device="c2">
+                    <div class="device-icon">🎯</div>
+                    <div class="device-name">C2 Center</div>
+                    <div class="device-counter" data-counter="c2">0</div>
+                    <div class="counter-label">messages sent</div>
+                </div>
+            </div>
+
+            <div class="middle-column">
+                <div class="component rabbitmq" id="rabbitmq">
+                    <div class="status-badge idle" id="rabbitmq-status">Idle</div>
+                    <div class="rabbitmq-icon">🐰</div>
+                    <div class="rabbitmq-name">RabbitMQ Fan-Out</div>
+                    <div class="rabbitmq-counter" id="rabbitmq-ex-counter">0</div>
+                    <div class="counter-label">Received At Exchange</div>
+                    <div class="rabbitmq-counter" id="rabbitmq-gf-counter">0</div>
+                    <div class="counter-label">Sent to Cache</div>
+                    <div class="rabbitmq-counter" id="rabbitmq-gp-counter">0</div>
+                    <div class="counter-label">Sent to Lakehouse</div>
+                </div>
+            </div>
+
+            <div class="gemfire-column">
+                <div class="component gemfire" id="gemfire">
+                    <div class="status-badge idle" id="gemfire-status">Idle</div>
+                    <div class="gemfire-icon">💎</div>
+                    <div class="gemfire-name">Gemfire Cache</div>
+                    <div class="gemfire-counter" id="gemfire-cached">0</div>
+                    <div class="counter-label">messages processed</div>
+                    
+                    <!-- Connection Classification Dashboard -->
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(156, 39, 176, 0.3);">
+                        <div style="font-size: 0.9em; color: #ba68c8; margin-bottom: 8px; font-weight: 600;">Connection Classification</div>
+                        <div style="display: flex; justify-content: space-around; gap: 10px;">
+                            <div style="flex: 1; text-align: center;">
+                                <div style="font-size: 1.4em; font-weight: 700; color: #00e676;" id="gemfire-normal-count">0</div>
+                                <div style="font-size: 0.7em; color: #888; margin-top: 3px;">Normal</div>
+                            </div>
+                            <div style="flex: 1; text-align: center;">
+                                <div style="font-size: 1.4em; font-weight: 700; color: #f44336;" id="gemfire-attack-count">0</div>
+                                <div style="font-size: 0.7em; color: #888; margin-top: 3px;">Attack</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="gemfire-hitrate" id="gemfire-hitrate">0% Hit Rate</div>
+                    <div class="gemfire-metric">
+                        <span id="gemfire-hits">0</span> hits /
+                        <span id="gemfire-misses">0</span> misses
+                    </div>
+                </div>
+
+                <div style="flex: 1;"></div>
+            </div>
+
+            <div class="targets-column">
+                <div style="flex: 1;"></div>
+
+                <!-- Training Process Box -->
+                <div class="component training-process" id="training-process" style="margin-bottom: 20px;">
+                    <div class="training-process-icon">🤖</div>
+                    <div class="training-process-name">Model Training</div>
+                    <div style="font-size: 0.8em; color: #888; margin-top: 8px;">Training data from Greenplum</div>
+                    <div style="font-size: 0.8em; color: #888; margin-top: 4px;">Deployed to Gemfire</div>
+                </div>
+
+                <div class="component greenplum" id="greenplum">
+                    <div class="status-badge idle" id="greenplum-status">Idle</div>
+                    <div class="greenplum-icon">🗄️</div>
+                    <div class="greenplum-name">Greenplum Database</div>
+                    <div class="greenplum-counter" id="greenplum-counter">0</div>
+                    <div class="counter-label">records stored</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-start" id="btnStart">▶️ Start Demo</button>
+            <button class="btn btn-stop" id="btnStop" disabled>⏹️ Stop Demo</button>
+            <button class="btn btn-reset" id="btnReset">🔄 Reset Counters</button>
+            
+            <!-- Reset Progress Status Bar -->
+            <div id="reset-progress-container" class="reset-progress-container" style="display: none;">
+                <div class="reset-progress-bar-wrapper">
+                    <div class="reset-progress-bar-fill" id="reset-progress-bar-fill" style="width: 0%"></div>
+                    <div class="reset-progress-text" id="reset-progress-text">0%</div>
+                </div>
+                <div class="reset-status-text" id="reset-status-text">Initializing...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Progress Modal -->
+    <div class="reset-modal" id="resetModal">
+        <div class="reset-modal-content">
+            <div class="reset-modal-title">🔄 Resetting Demo</div>
+            <div class="reset-progress-bar-container">
+                <div class="reset-progress-bar" id="resetProgressBar"></div>
+            </div>
+            <div class="reset-status-message" id="resetStatusMessage">
+                <span class="status-icon">⏳</span>
+                <span>Initializing...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const POLL_INTERVAL = 2000;
+        const ANIMATION_SPEED = 2500;
+
+        let isRunning = false;
+        let pollTimer = null;
+        let animationTimer = null;
+
+        const DEVICES = ['celltower', 'mobile', 'laptop', 'iot', 'c2'];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeConnections();
+            setupEventListeners();
+            startPolling();
+        });
+
+        function setupEventListeners() {
+            const btnStart = document.getElementById('btnStart');
+            const btnStop = document.getElementById('btnStop');
+            const btnReset = document.getElementById('btnReset');
+            
+            if (btnStart) {
+                btnStart.addEventListener('click', startDemo);
+            }
+            if (btnStop) {
+                btnStop.addEventListener('click', stopDemo);
+            }
+            if (btnReset) {
+                btnReset.addEventListener('click', function(e) {
+                    if (typeof resetCounters === 'function') {
+                        resetCounters();
+                    } else {
+                        console.error('[SETUP] resetCounters is not a function!');
+                    }
+                });
+            } else {
+                console.error('[SETUP] Reset button not found!');
+            }
+        }
+
+        function initializeConnections() {
+            const svg = d3.select('#connections-svg');
+            setTimeout(() => {
+                drawConnectionLines(svg);
+            }, 100);
+        }
+
+        function drawConnectionLines(svg) {
+            svg.selectAll('*').remove();
+
+            const flowArea = document.getElementById('flowArea');
+            const flowRect = flowArea.getBoundingClientRect();
+
+            const devices = DEVICES.map(id => {
+                const el = document.getElementById(`device-${id}`);
+                const rect = el.getBoundingClientRect();
+                return {
+                    id: id,
+                    x: rect.right - flowRect.left,
+                    y: rect.top + rect.height / 2 - flowRect.top
+                };
+            });
+
+            const rabbit = document.getElementById('rabbitmq').getBoundingClientRect();
+            const rabbitPos = {
+                x: rabbit.left - flowRect.left,
+                xRight: rabbit.right - flowRect.left,
+                y: rabbit.top + rabbit.height / 2 - flowRect.top
+            };
+
+            const gemfire = document.getElementById('gemfire').getBoundingClientRect();
+            const gemfirePos = {
+                x: gemfire.left - flowRect.left,
+                xRight: gemfire.right - flowRect.left,
+                y: gemfire.top + gemfire.height / 2 - flowRect.top
+            };
+
+            const greenplum = document.getElementById('greenplum').getBoundingClientRect();
+            const greenplumPos = {
+                x: greenplum.left - flowRect.left,
+                y: greenplum.top + greenplum.height / 2 - flowRect.top
+            };
+            
+            const trainingProcess = document.getElementById('training-process').getBoundingClientRect();
+            const trainingPos = {
+                x: trainingProcess.left - flowRect.left,
+                xRight: trainingProcess.right - flowRect.left,
+                y: trainingProcess.top + trainingProcess.height / 2 - flowRect.top
+            };
+
+            // Lines from devices to RabbitMQ
+            devices.forEach(device => {
+                svg.append('line')
+                    .attr('class', 'flow-line device-to-rabbit')
+                    .attr('id', `line-${device.id}`)
+                    .attr('x1', device.x)
+                    .attr('y1', device.y)
+                    .attr('x2', rabbitPos.x)
+                    .attr('y2', rabbitPos.y);
+            });
+
+            // RabbitMQ → GemFire (L-shaped path)
+            const midX1 = rabbitPos.xRight + (gemfirePos.x - rabbitPos.xRight) / 2;
+          svg.append('path')
+            .attr('class', 'flow-line rabbit-to-gemfire')
+            .attr('id', 'line-rabbit-gemfire')
+            .attr('d', `M${rabbitPos.xRight},${rabbitPos.y}
+                            L${midX1},${rabbitPos.y} 
+                            L${midX1},${gemfirePos.y} 
+                            L${gemfirePos.x},${gemfirePos.y}`);
+
+            // RabbitMQ → Greenplum (L-shaped path)
+            const midX2 = rabbitPos.xRight + (greenplumPos.x - rabbitPos.xRight) / 2;
+          svg.append('path')
+            .attr('class', 'flow-line rabbit-to-greenplum')
+            .attr('id', 'line-rabbit-greenplum')
+            .attr('d', `M${rabbitPos.xRight},${rabbitPos.y}
+                            L${midX2},${rabbitPos.y} 
+                            L${midX2},${greenplumPos.y} 
+                            L${greenplumPos.x},${greenplumPos.y}`);
+
+            // Greenplum → Training Process (L-shaped dotted path)
+            const midY1 = greenplumPos.y + (trainingPos.y - greenplumPos.y) / 2;
+          svg.append('path')
+            .attr('class', 'flow-line gemfire-to-greenplum')
+                .attr('id', 'line-greenplum-training')
+            .attr('stroke-dasharray', '8,8')
+                .attr('d', `M${greenplumPos.x + 50},${greenplumPos.y} 
+                            L${greenplumPos.x + 50},${midY1} 
+                            L${trainingPos.x},${midY1} 
+                            L${trainingPos.x},${trainingPos.y}`);
+
+            // Training Process → Gemfire (L-shaped dotted path)
+            const midY2 = trainingPos.y + (gemfirePos.y - trainingPos.y) / 2;
+            svg.append('path')
+                .attr('class', 'flow-line gemfire-to-greenplum')
+                .attr('id', 'line-training-gemfire')
+                .attr('stroke-dasharray', '8,8')
+                .attr('d', `M${trainingPos.xRight},${trainingPos.y} 
+                            L${trainingPos.xRight + 50},${trainingPos.y} 
+                            L${trainingPos.xRight + 50},${midY2} 
+                            L${gemfirePos.x},${midY2} 
+                            L${gemfirePos.x},${gemfirePos.y}`);
+        }
+
+        function animateParticle(fromId, toId, className) {
+            const svg = d3.select('#connections-svg');
+            const flowArea = document.getElementById('flowArea');
+            const flowRect = flowArea.getBoundingClientRect();
+
+            let x1, y1, x2, y2;
+            let pathData;
+
+            if (toId === 'rabbitmq') {
+                const device = document.getElementById(`device-${fromId}`).getBoundingClientRect();
+                const rabbit = document.getElementById('rabbitmq').getBoundingClientRect();
+
+                x1 = device.right - flowRect.left;
+                y1 = device.top + device.height / 2 - flowRect.top;
+                x2 = rabbit.left - flowRect.left;
+                y2 = rabbit.top + rabbit.height / 2 - flowRect.top;
+                
+                pathData = `M${x1},${y1} L${x2},${y2}`;
+            } else if (fromId === 'rabbitmq' && toId === 'gemfire') {
+                // L-shaped path to Gemfire
+                const rabbit = document.getElementById('rabbitmq').getBoundingClientRect();
+                const gemfire = document.getElementById('gemfire').getBoundingClientRect();
+                const midX = rabbit.right - flowRect.left + (gemfire.left - flowRect.left - (rabbit.right - flowRect.left)) / 2;
+
+                x1 = rabbit.right - flowRect.left;
+                y1 = rabbit.top + rabbit.height / 2 - flowRect.top;
+                x2 = gemfire.left - flowRect.left;
+                y2 = gemfire.top + gemfire.height / 2 - flowRect.top;
+                
+                pathData = `M${x1},${y1} L${midX},${y1} L${midX},${y2} L${x2},${y2}`;
+            } else if (fromId === 'rabbitmq' && toId === 'greenplum') {
+                // L-shaped path to Greenplum
+                const rabbit = document.getElementById('rabbitmq').getBoundingClientRect();
+                const greenplum = document.getElementById('greenplum').getBoundingClientRect();
+                const midX = rabbit.right - flowRect.left + (greenplum.left - flowRect.left - (rabbit.right - flowRect.left)) / 2;
+
+                x1 = rabbit.right - flowRect.left;
+                y1 = rabbit.top + rabbit.height / 2 - flowRect.top;
+                x2 = greenplum.left - flowRect.left;
+                y2 = greenplum.top + greenplum.height / 2 - flowRect.top;
+                
+                pathData = `M${x1},${y1} L${midX},${y1} L${midX},${y2} L${x2},${y2}`;
+            } else if (fromId === 'gemfire' && toId === 'greenplum') {
+                const gemfire = document.getElementById('gemfire').getBoundingClientRect();
+                const greenplum = document.getElementById('greenplum').getBoundingClientRect();
+
+                x1 = gemfire.right - flowRect.left;
+                y1 = gemfire.top + gemfire.height / 2 - flowRect.top;
+                x2 = greenplum.left - flowRect.left;
+                y2 = greenplum.top + greenplum.height / 2 - flowRect.top;
+                
+                pathData = `M${x1},${y1} L${x1 + 50},${y1} L${x1 + 50},${y2} L${x2},${y2}`;
+            }
+
+            // Animate particle along the path
+            const path = svg.append('path')
+                .attr('d', pathData)
+                .attr('fill', 'none')
+                .attr('stroke', 'none');
+
+            const pathLength = path.node().getTotalLength();
+            const particle = svg.append('circle')
+                .attr('class', `particle ${className}`)
+                .attr('r', 4);
+
+            particle.transition()
+                .duration(ANIMATION_SPEED)
+                .ease(d3.easeLinear)
+                .attrTween('transform', function() {
+                    return function(t) {
+                        const point = path.node().getPointAtLength(t * pathLength);
+                        return `translate(${point.x},${point.y})`;
+                    };
+                })
+                .on('end', function() {
+                    path.remove();
+                    particle.remove();
+                });
+        }
+
+        function startPolling() {
+            if (pollTimer) clearInterval(pollTimer);
+            fetchStats();
+            pollTimer = setInterval(fetchStats, POLL_INTERVAL);
+        }
+
+        async function fetchStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/stats`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch stats: ${response.status}`);
+                }
+
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+                // Show error in UI if stats fail to load
+                if (!window.statsErrorShown) {
+                    window.statsErrorShown = true;
+                }
+            }
+        }
+
+        function updateUI(data) {
+            // Update device counters
+            if (data.devices) {
+                DEVICES.forEach(device => {
+                    const counter = document.querySelector(`[data-counter="${device}"]`);
+
+                    if (counter && data.devices[device] !== undefined) {
+                        const newValue = data.devices[device];
+                        counter.textContent = newValue.toLocaleString();
+
+                        if (newValue > parseInt(counter.dataset.lastValue || '0')) {
+                            flashComponent(`device-${device}`);
+                            animateParticle(device, 'rabbitmq', 'device-particle');
+                        }
+                        counter.dataset.lastValue = newValue;
+                    }
+                });
+            }
+
+            // Update RabbitMQ counter
+            if (data.rabbitmq) {
+                const rabbitExCounter = document.getElementById('rabbitmq-ex-counter');
+                const rabbitGfCounter = document.getElementById('rabbitmq-gf-counter');
+                const rabbitGpCounter = document.getElementById('rabbitmq-gp-counter');
+                const rabbitStatus = document.getElementById('rabbitmq-status');
+
+                if (rabbitExCounter && rabbitGfCounter && rabbitGpCounter) {
+                    const oldExchangePublished = parseInt(rabbitExCounter.textContent.replace(/,/g, '')) || 0;
+                    const oldGemfireProcessed = parseInt(rabbitGfCounter.textContent.replace(/,/g, '')) || 0;
+                    const oldGpssProcessed = parseInt(rabbitGpCounter.textContent.replace(/,/g, '')) || 0;
+
+                    const newExchangePublished = data.rabbitmq.exchange_published || 0;
+                    const newGemfireProcessed = data.rabbitmq.gemfire_processed || 0;
+                    const newGpssProcessed = data.rabbitmq.gpss_processed || 0;
+
+                    rabbitExCounter.textContent = newExchangePublished.toLocaleString();
+                    rabbitGfCounter.textContent = newGemfireProcessed.toLocaleString();
+                    rabbitGpCounter.textContent = newGpssProcessed.toLocaleString();
+
+                    if (newExchangePublished > oldExchangePublished) {
+                        flashComponent('rabbitmq');
+                        animateParticle('rabbitmq', 'gemfire', 'gemfire-particle');
+                        animateParticle('rabbitmq', 'greenplum', 'greenplum-particle');
+                    }
+
+                    if (newExchangePublished > 0) {
+                        rabbitStatus.textContent = 'Active';
+                        rabbitStatus.className = 'status-badge running';
+                    } else {
+                        rabbitStatus.textContent = 'Idle';
+                        rabbitStatus.className = 'status-badge idle';
+                    }
+                }
+            }
+
+            // Update Gemfire stats
+            if (data.gemfire) {
+                const gemfireCached = document.getElementById('gemfire-cached');
+                const gemfireHitrate = document.getElementById('gemfire-hitrate');
+                const gemfireHits = document.getElementById('gemfire-hits');
+                const gemfireMisses = document.getElementById('gemfire-misses');
+                const gemfireStatus = document.getElementById('gemfire-status');
+                const gemfireNormalCount = document.getElementById('gemfire-normal-count');
+                const gemfireAttackCount = document.getElementById('gemfire-attack-count');
+
+                if (gemfireCached && gemfireHitrate && gemfireHits && gemfireMisses) {
+                    const oldProcessed = parseInt(gemfireCached.textContent.replace(/,/g, '')) || 0;
+                    const newProcessed = data.gemfire.messages_processed || 0;
+
+                    gemfireCached.textContent = newProcessed.toLocaleString();
+                    gemfireHitrate.textContent = `${data.gemfire.cache_hit_rate || 0}% Hit Rate`;
+                    gemfireHits.textContent = (data.gemfire.cache_hits || 0).toLocaleString();
+                    gemfireMisses.textContent = (data.gemfire.cache_misses || 0).toLocaleString();
+                    
+                    // Update connection classification counts
+                    if (gemfireNormalCount) {
+                        gemfireNormalCount.textContent = (data.gemfire.normal_connections || 0).toLocaleString();
+                    }
+                    if (gemfireAttackCount) {
+                        gemfireAttackCount.textContent = (data.gemfire.attack_connections || 0).toLocaleString();
+                    }
+
+                    if (newProcessed > oldProcessed) {
+                        flashComponent('gemfire');
+                    }
+
+                    if (gemfireStatus) {
+                    if (data.gemfire.model_loaded) {
+                        gemfireStatus.textContent = 'Model Loaded';
+                        gemfireStatus.className = 'status-badge model-loaded';
+                    } else if (newProcessed > 0) {
+                        gemfireStatus.textContent = 'Active';
+                        gemfireStatus.className = 'status-badge running';
+                    } else {
+                        gemfireStatus.textContent = 'Idle';
+                        gemfireStatus.className = 'status-badge idle';
+                    }
+                    }
+                }
+            }
+
+            // Update Greenplum counter
+            if (data.greenplum !== undefined) {
+                const greenplumCounter = document.getElementById('greenplum-counter');
+                const oldValue = parseInt(greenplumCounter.textContent.replace(/,/g, ''));
+                greenplumCounter.textContent = data.greenplum.toLocaleString();
+
+                if (data.greenplum > oldValue) {
+                    flashComponent('greenplum');
+                }
+
+                const greenplumStatus = document.getElementById('greenplum-status');
+                if (data.greenplum > 0) {
+                    greenplumStatus.textContent = 'Active';
+                    greenplumStatus.className = 'status-badge running';
+                } else {
+                    greenplumStatus.textContent = 'Idle';
+                    greenplumStatus.className = 'status-badge idle';
+                }
+            }
+
+            if (data.is_running !== undefined) {
+                updateDemoState(data.is_running);
+            }
+        }
+
+        function flashComponent(componentId) {
+            const component = document.getElementById(componentId);
+            component.classList.add('active');
+            setTimeout(() => {
+                component.classList.remove('active');
+            }, 300);
+        }
+
+        function updateDemoState(running) {
+            isRunning = running;
+            document.getElementById('btnStart').disabled = running;
+            document.getElementById('btnStop').disabled = !running;
+        }
+
+        async function startDemo() {
+            try {
+                const response = await fetch(`${API_BASE}/api/demo/start`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to start demo');
+
+                const result = await response.json();
+                if (result.success) {
+                    updateDemoState(true);
+                } else {
+                    alert('Failed to start demo: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error starting demo:', error);
+                alert('Error starting demo: ' + error.message);
+            }
+        }
+
+        async function stopDemo() {
+            try {
+                const response = await fetch(`${API_BASE}/api/demo/stop`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    updateDemoState(false);
+                } else {
+                    const errorMsg = result.message || result.error || 'Unknown error';
+                    console.error('[STOP] Failed to stop demo:', errorMsg);
+                    alert('Failed to stop demo: ' + errorMsg);
+                }
+            } catch (error) {
+                console.error('[STOP] Error stopping demo:', error);
+                alert('Error stopping demo: ' + error.message);
+            }
+        }
+
+        function showResetModal() {
+            const modal = document.getElementById('resetModal');
+            const progressBar = document.getElementById('resetProgressBar');
+            const statusMessage = document.getElementById('resetStatusMessage');
+            
+            if (!modal || !progressBar || !statusMessage) {
+                console.error('[RESET MODAL] Reset modal elements not found!');
+                return;
+            }
+            
+            // Show modal - use both class and inline style to ensure visibility
+            modal.style.display = 'flex';
+            modal.style.visibility = 'visible';
+            modal.style.opacity = '1';
+            modal.classList.add('active');
+            
+            // Reset progress
+            progressBar.style.width = '0%';
+            statusMessage.className = 'reset-status-message processing';
+            statusMessage.innerHTML = '<span class="status-icon">⏳</span><span>Initializing...</span>';
+            
+            // Force a reflow to ensure modal is visible
+            void modal.offsetHeight;
+            
+        }
+
+        function updateResetProgress(percent, message, isCompleted = false) {
+            const progressBar = document.getElementById('resetProgressBar');
+            const statusMessage = document.getElementById('resetStatusMessage');
+            
+            if (!progressBar || !statusMessage) {
+                console.error('Reset progress elements not found!');
+                return;
+            }
+            
+            progressBar.style.width = percent + '%';
+            
+            if (isCompleted) {
+                statusMessage.className = 'reset-status-message completed';
+                statusMessage.innerHTML = `<span class="status-icon">✓</span><span>${message}</span>`;
+            } else {
+                statusMessage.className = 'reset-status-message processing';
+                statusMessage.innerHTML = `<span class="status-icon">⏳</span><span>${message}</span>`;
+            }
+            
+        }
+
+        function hideResetModal() {
+            const modal = document.getElementById('resetModal');
+            if (!modal) return;
+            
+            setTimeout(() => {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+            }, 1500); // Wait 1.5 seconds to show completion message
+        }
+
+        async function resetCounters() {
+            const resetBtn = document.getElementById('btnReset');
+            const progressContainer = document.getElementById('reset-progress-container');
+            const progressBar = document.getElementById('reset-progress-bar-fill');
+            const progressText = document.getElementById('reset-progress-text');
+            const statusText = document.getElementById('reset-status-text');
+            
+            // Verify all elements exist
+            if (!progressContainer || !progressBar || !progressText || !statusText) {
+                console.error('[RESET] Missing progress bar elements!');
+                alert('Error: Reset progress bar elements not found. Check console for details.');
+                return;
+            }
+            
+            // Disable button and show progress bar
+            resetBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            progressContainer.classList.add('active');
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+            statusText.textContent = 'Waiting for confirmation...';
+            statusText.style.color = '#888';
+            statusText.style.fontWeight = 'normal';
+            
+            // Force visibility
+            progressContainer.style.visibility = 'visible';
+            progressContainer.style.opacity = '1';
+            
+            // Show modal FIRST, before confirm dialog
+            showResetModal();
+            updateResetProgress(0, 'Waiting for confirmation...', false);
+            
+            // Small delay to ensure modal is visible
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            if (!confirm('This will clear the Greenplum table, RabbitMQ queue, and Gemfire cache. Are you sure you want to continue?')) {
+                hideResetModal();
+                resetBtn.disabled = false;
+                progressContainer.style.display = 'none';
+                progressContainer.classList.remove('active');
+                return;
+            }
+
+            updateResetProgress(5, 'Initializing reset...', false);
+            progressBar.style.width = '5%';
+            progressText.textContent = '5%';
+            statusText.textContent = 'Initializing reset...';
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            try {
+                updateResetProgress(10, 'Stopping demo if running...', false);
+                progressBar.style.width = '10%';
+                progressText.textContent = '10%';
+                statusText.textContent = 'Stopping demo if running...';
+                await new Promise(resolve => setTimeout(resolve, 400));
+
+                updateResetProgress(20, 'Stopping demo...', false);
+                progressBar.style.width = '20%';
+                progressText.textContent = '20%';
+                statusText.textContent = 'Stopping demo...';
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                updateResetProgress(30, 'Clearing RabbitMQ queues (gpss_queue, gemfire_queue)...', false);
+                progressBar.style.width = '30%';
+                progressText.textContent = '30%';
+                statusText.textContent = 'Clearing RabbitMQ queues...';
+                
+                // Make the API call
+                const response = await fetch(`${API_BASE}/api/demo/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ clear_data: true })
+                });
+
+                // Update progress after API call starts
+                await new Promise(resolve => setTimeout(resolve, 500));
+                updateResetProgress(50, 'RabbitMQ queues cleared ✓', false);
+                progressBar.style.width = '50%';
+                progressText.textContent = '50%';
+                statusText.textContent = 'RabbitMQ queues cleared ✓';
+                await new Promise(resolve => setTimeout(resolve, 400));
+
+                updateResetProgress(60, 'Clearing Greenplum table...', false);
+                progressBar.style.width = '60%';
+                progressText.textContent = '60%';
+                statusText.textContent = 'Clearing Greenplum table...';
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                updateResetProgress(75, 'Greenplum table cleared ✓', false);
+                progressBar.style.width = '75%';
+                progressText.textContent = '75%';
+                statusText.textContent = 'Greenplum table cleared ✓';
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                updateResetProgress(80, 'Clearing Gemfire prediction cache...', false);
+                progressBar.style.width = '80%';
+                progressText.textContent = '80%';
+                statusText.textContent = 'Clearing Gemfire prediction cache...';
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('[RESET] API call failed:', response.status, errorText);
+                    throw new Error('Failed to reset: ' + errorText);
+                }
+
+                const result = await response.json();
+                
+                updateResetProgress(85, 'Gemfire cache cleared ✓', false);
+                progressBar.style.width = '85%';
+                progressText.textContent = '85%';
+                statusText.textContent = 'Gemfire cache cleared ✓';
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                updateResetProgress(90, 'Resetting UI counters...', false);
+                progressBar.style.width = '90%';
+                progressText.textContent = '90%';
+                statusText.textContent = 'Resetting UI counters...';
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                // Reset all counters
+                    DEVICES.forEach(device => {
+                        const counter = document.querySelector(`[data-counter="${device}"]`);
+                        if (counter) counter.textContent = '0';
+                    });
+                
+                    document.getElementById('rabbitmq-ex-counter').textContent = '0';
+                    document.getElementById('rabbitmq-gp-counter').textContent = '0';
+                    document.getElementById('rabbitmq-gf-counter').textContent = '0';
+                
+                    document.getElementById('gemfire-cached').textContent = '0';
+                    document.getElementById('gemfire-hitrate').textContent = '0% Hit Rate';
+                    document.getElementById('gemfire-hits').textContent = '0';
+                    document.getElementById('gemfire-misses').textContent = '0';
+                document.getElementById('gemfire-normal-count').textContent = '0';
+                document.getElementById('gemfire-attack-count').textContent = '0';
+                
+                    document.getElementById('greenplum-counter').textContent = '0';
+
+                if (result.success) {
+                    updateResetProgress(100, 'Reset completed successfully!', true);
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '100%';
+                    
+                    // Show success status (no setup reminder here - only in alert)
+                    statusText.textContent = '✓ Reset completed successfully!';
+                    statusText.style.color = '#00e676';
+                    statusText.style.fontWeight = 'bold';
+                    
+                    // Ensure status bar is visible
+                    progressContainer.style.display = 'block';
+                    progressContainer.classList.add('active');
+                    
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    hideResetModal();
+                    
+                    // Keep progress bar visible longer to show success message
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        progressContainer.classList.remove('active');
+                        // Keep Reset button disabled
+                        resetBtn.disabled = true;
+                        statusText.style.color = '#888';
+                        statusText.style.fontWeight = 'normal';
+                    }, 5000);
+                    
+                    // Show alert with setup reminder (only once)
+                    let alertMsg = 'Demo Reset Successfully';
+                    if (result.requires_setup) {
+                        alertMsg += '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                        alertMsg += '⚠️  IMPORTANT: Please rerun Setup step to refresh connections.\n';
+                        alertMsg += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+                    }
+                    alert(alertMsg);
+                } else {
+                    updateResetProgress(100, 'Reset completed with warnings: ' + (result.message || 'Unknown error'), true);
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '100%';
+                    statusText.textContent = '⚠ Reset completed with warnings: ' + (result.message || 'Unknown error');
+                    statusText.style.color = '#ffa500';
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    hideResetModal();
+                    
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        progressContainer.classList.remove('active');
+                        resetBtn.disabled = false;
+                        statusText.style.color = '#888';
+                    }, 3000);
+                    alert('Reset completed with warnings: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('[RESET] Error during reset:', error);
+                updateResetProgress(100, 'Error: ' + error.message, true);
+                progressBar.style.width = '100%';
+                progressText.textContent = '100%';
+                statusText.textContent = '✗ Error: ' + error.message;
+                statusText.style.color = '#e74c3c';
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                hideResetModal();
+                
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressContainer.classList.remove('active');
+                    resetBtn.disabled = false;
+                    statusText.style.color = '#888';
+                }, 3000);
+                alert('Error resetting: ' + error.message);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(() => {
+                initializeConnections();
+            }, 250);
+        });
+    </script>
+</body>
+</html>
