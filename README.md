@@ -7,7 +7,7 @@
 - **RabbitMQ**: Message streaming from simulated network devices
 - **Greenplum Streaming Server (GPSS)**: Real-time data ingestion into Greenplum
 - **Gemfire**: In-memory caching for prediction results 
-- **Greenplum**: Historical data storage and used for model training 
+- **Greenplum**: Historical data storage; used for model training 
 - **ML Pipeline**: Decision tree model for intrusion detection on KDD Cup dataset
 
 ## 🚀 Quick Start
