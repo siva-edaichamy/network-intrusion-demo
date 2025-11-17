@@ -1,16 +1,12 @@
-# Tanzu Data Intelligence Demo
+**Real-time Network Intrusion Detection** using RabbitMQ, Gemfire, and Greenplum (Tanzu Data Intelligence)
 
-**Real-time Network Intrusion Detection** using RabbitMQ, Gemfire, and Greenplum
-
-## 🎯 What This Demo Shows
+## 🎯 Demonstrates:
 
 - **RabbitMQ**: Message streaming from simulated network devices
 - **Greenplum Streaming Server (GPSS)**: Real-time data ingestion into Greenplum
 - **Gemfire**: In-memory caching for prediction results 
-- **Greenplum**: Historical data storage; used for model training 
-- **ML Pipeline**: Decision tree model for intrusion detection on KDD Cup dataset
-
-## 🚀 Quick Start
+- **Greenplum**: Historical data storage; used for BI and/or model training 
+- **ML Pipeline**: Decision tree model for intrusion detection on the KDD Cup dataset
 
 ### Prerequisites
 - Python 3.8+ (Python 3.9+ recommended)
@@ -26,7 +22,7 @@
 git clone <repository-url>
 cd tdi-network-intrusion-demo
 
-# 2. Create and activate virtual environment (recommended)
+# 2. Create and activate a virtual environment (recommended)
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
@@ -41,11 +37,9 @@ cp .env.example .env
 # Copy your KDD CSV files to:
 #   - Training dataset: ./data/kdd_cup_data_history.csv
 #   - Simulation dataset: ./data/kdd_cup_data_stream.csv
-# Note: These files are gitignored - you need to add them manually
 
 # 6. Start the application
 python main.py
-```
 
 The Control Panel will automatically open in your browser at `http://localhost:8080/control`
 
@@ -61,15 +55,15 @@ You need two KDD Cup dataset files:
    - Place in: `./data/kdd_cup_data_stream.csv`
    - Should contain network connection data to simulate
 
-**Note**: These CSV files are not included in the repository (gitignored). You must obtain the KDD Cup dataset separately and place the files in the `data/` directory.
+**Note**: For a self-contained demo, trimmed versions of the CSV files are included in the repository, though it is not a good practice. If you want to use the complete KDD dataset, you can download and place the files in the `data/` directory.
 
 ## 📋 Demo Flow
 
 ### Control Panel (Setup)
 1. **Configuration**: Verify all settings loaded from `.env`
 2. **Pre-flight Checks**: Test connections to all services
-3. **Train Model**: Train ML model using training dataset (kdd_cup_data_history.csv)
-4. **One-Time Setup**: Create tables, deploy GPSS
+3. **Setup**: Create tables, deploy GPSS
+4. **Train Model**: Train ML model using training dataset (kdd_cup_data_history.csv)
 5. **Start Demo**: Launch simulation using simulation dataset (kdd_cup_data_stream.csv) and open dashboard
 6. **Reset Demo**: Clear all data (RabbitMQ queues, Greenplum table, Gemfire cache) while keeping the trained model
 
@@ -83,8 +77,6 @@ You need two KDD Cup dataset files:
 
 The application is **fully restartable**:
 - All setup is idempotent (safe to run multiple times)
-- Soft Reset: Stop and restart without losing setup
-- Hard Reset: Clean everything and start fresh
 
 ## 📁 Project Structure
 
@@ -106,8 +98,8 @@ tdi-network-intrusion-demo/
 │   └── *.pkl                   # Model files (created after training)
 ├── data/                        # Dataset files (gitignored)
 │   ├── .gitkeep                # Keeps directory in git
-│   ├── kdd_cup_data_history.csv    # Training dataset (you must add)
-│   └── kdd_cup_data_stream.csv      # Simulation dataset (you must add)
+│   ├── kdd_cup_data_history.csv    # Training dataset 
+│   └── kdd_cup_data_stream.csv      # Simulation dataset 
 ├── logs/                        # Application logs (gitignored)
 │   └── .gitkeep                # Keeps directory in git
 ├── src/                         # Core application code
@@ -139,22 +131,16 @@ All configurations are in two places:
 **Important:** The GPSS configuration (`config/load_kdd.yaml`) is **automatically generated** from `load_kdd.yaml.template` using your `.env` values during setup. You never need to edit it manually.
 
 ## 📖 Documentation
-
 - **README.md**: This file - quick start and overview
-- **SETUP.md**: Detailed setup instructions (if exists)
-- **TROUBLESHOOTING.md**: Common issues and solutions (if exists)
 
 ## 🆘 Getting Help
 
-1. Check **TROUBLESHOOTING.md** for common issues
-2. Use "Download Diagnostics" in Control Panel
-3. Check logs in `./logs/` directory
+Check logs in `./logs/` directory
 
 ## 🎥 Demo Tips
 
-- Use **Full Screen** mode on Demo Dashboard
-- Run pre-flight checks before each demo
-- Consider purging RabbitMQ queue for clean start
+- Run pre-flight checks & Setup before each demo
+- Use "Reset Demo" for a clean start
 - Default rate: 3 messages/second (easy to follow visually)
 
 ## 📊 Key Metrics Displayed
@@ -168,7 +154,7 @@ All configurations are in two places:
 ## 🔒 Security Notes
 
 - **Never commit sensitive files**: `.env`, `config/load_kdd.yaml`, and dataset files are gitignored
-- Use `.env.example` as template for sharing configuration structure
+- Use `.env.example` as a template for sharing configuration structure
 - Sanitize logs before sharing diagnostics
 - Keep SSH keys secure and never commit them (`.pem`, `.key` files are gitignored)
 - The `config/load_kdd.yaml` file contains credentials and is auto-generated - never commit it
