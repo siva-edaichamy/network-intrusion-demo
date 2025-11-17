@@ -6,8 +6,8 @@
 
 - **RabbitMQ**: Message streaming from simulated network devices
 - **Greenplum Streaming Server (GPSS)**: Real-time data ingestion into Greenplum
-- **Gemfire**: In-memory caching for prediction results (model loaded from disk)
-- **Greenplum**: Historical data storage and model training with MADlib
+- **Gemfire**: In-memory caching for prediction results 
+- **Greenplum**: Historical data storage and used for model training 
 - **ML Pipeline**: Decision tree model for intrusion detection on KDD Cup dataset
 
 ## 🚀 Quick Start
@@ -15,7 +15,7 @@
 ### Prerequisites
 - Python 3.8+ (Python 3.9+ recommended)
 - Access to RabbitMQ, Greenplum, and Gemfire instances
-- KDD Cup dataset (CSV format) - see [Dataset Requirements](#-dataset-requirements)
+- KDD Cup dataset (CSV format) - see https://www.kaggle.com/datasets/galaxyh/kdd-cup-1999-data
 - GPSS (Greenplum Streaming Server) installed and accessible
 - Virtual environment (recommended)
 
@@ -132,7 +132,7 @@ tdi-network-intrusion-demo/
 
 ## 🔧 Configuration
 
-All configuration is in two places:
+All configurations are in two places:
 - **`.env`**: Credentials and connection strings (sensitive)
 - **`config/config.yaml`**: Application settings (non-sensitive)
 
@@ -156,18 +156,6 @@ All configuration is in two places:
 - Run pre-flight checks before each demo
 - Consider purging RabbitMQ queue for clean start
 - Default rate: 3 messages/second (easy to follow visually)
-
-### Two-Phase Demo Approach
-
-For maximum impact, demonstrate in two phases:
-
-1. **Phase 1 - Data Pipeline Only:** Start demo without a model to show data streaming and storage
-2. **Interlude:** Train model in Greenplum using MADlib
-3. **Phase 2 - With ML:** Upload model and resume to show real-time predictions
-
-This approach powerfully demonstrates **how ML transforms passive data collection into active threat detection**.
-
-See **DEMO_SCENARIOS.md** for detailed demo scripts and techniques.
 
 ## 📊 Key Metrics Displayed
 
@@ -219,7 +207,7 @@ See **DEMO_SCENARIOS.md** for detailed demo scripts and techniques.
 
 ## 📝 License
 
-[Add your license here]
+
 
 ## 👥 Contributors
 
@@ -228,6 +216,4 @@ See **DEMO_SCENARIOS.md** for detailed demo scripts and techniques.
 ## 🙏 Acknowledgments
 
 - KDD Cup 1999 dataset
-- Tanzu Data Intelligence platform
-- Greenplum Database
-- Apache Gemfire
+
