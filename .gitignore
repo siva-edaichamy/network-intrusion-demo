@@ -53,7 +53,6 @@ logs/*.txt
 *.log
 
 # Data
-data/*.csv
 data/*.txt
 data/*.json
 !data/.gitkeep
